@@ -1,0 +1,18 @@
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.AssemblyInfoInputs.cache
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.AssemblyInfo.cs
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.csproj.CoreCompileInputs.cache
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\prog part one.exe
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\prog part one.deps.json
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\prog part one.runtimeconfig.json
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\prog part one.dll
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\prog part one.pdb
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\System.Windows.Extensions.dll
+C:\Users\DOD\source\repos\prog part one\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.csproj.AssemblyReference.cache
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog par.AB41341E.Up2Date
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.dll
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\refint\prog part one.dll
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.pdb
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\prog part one.genruntimeconfig.cache
+C:\Users\DOD\source\repos\prog part one\obj\Debug\net8.0\ref\prog part one.dll
