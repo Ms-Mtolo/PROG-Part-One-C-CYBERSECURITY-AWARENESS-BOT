@@ -1,5 +1,4 @@
 # GitHub Actions workflow for Cybersecurity Awareness Bot
-# This workflow builds, tests, and verifies the .NET 8.0 console application
 
 name: Cybersecurity Awareness Bot CI
 
@@ -8,179 +7,87 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
+env:
+  # Solution configuration
+  SOLUTION_NAME: prog part one.slnx
+  CONFIGURATION: Release
+  DOTNET_VERSION: 8.0.x
+  
+  # Project paths (update these to match your actual project structure)
+  PROJECT_PATH: .
+  OUTPUT_PATH: ./publish
+  
+  # Note: Since this is a console app, test project and WAP paths are optional
+  # Uncomment and update if you have these in your project
+  # TEST_PROJECT_PATH: tests/CybersecurityBot.Tests/CybersecurityBot.Tests.csproj
+  # WAP_PROJECT_DIRECTORY: ./package
+  # WAP_PROJECT_PATH: ./package/CybersecurityBot.Package.wapproj
+
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
     
     steps:
-    # Step 1: Check out the code from GitHub repository
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for all branches
+        fetch-depth: 0
     
-    # Step 2: Setup .NET 8.0 SDK
-    - name: Setup .NET 8.0
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    # Step 3: Restore NuGet packages
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
     - name: Restore dependencies
-      run: dotnet restore
+      run: msbuild "${{ env.SOLUTION_NAME }}" /t:Restore /p:Configuration=${{ env.CONFIGURATION }}
     
-    # Step 4: Build the application
-    - name: Build application
-      run: dotnet build --no-restore --configuration Release
+    - name: Build solution
+      run: msbuild "${{ env.SOLUTION_NAME }}" /p:Configuration=${{ env.CONFIGURATION }}
     
-    # Step 5: Verify required files exist
-    - name: Check for required files
+    - name: Verify required files
       run: |
-        echo "Checking for required project files..."
-        if [ -f "CybersecurityAwarenessBot.csproj" ]; then
-          echo "✓ Project file found"
-        else
-          echo "✗ Project file not found!"
-          exit 1
-        fi
+        Write-Host "========================================="
+        Write-Host "  VERIFYING PROJECT FILES"
+        Write-Host "========================================="
         
-        if [ -f "Program.cs" ]; then
-          echo "✓ Program.cs found"
-        else
-          echo "✗ Program.cs not found!"
-          exit 1
-        fi
+        # Check solution file
+        if (Test-Path "${{ env.SOLUTION_NAME }}") {
+            Write-Host "✓ Solution found: ${{ env.SOLUTION_NAME }}" -ForegroundColor Green
+        } else {
+            Write-Host "✗ Solution not found!" -ForegroundColor Red
+            exit 1
+        }
         
-        if [ -f "greeting.wav" ]; then
-          echo "✓ greeting.wav found"
-        else
-          echo "⚠ Warning: greeting.wav not found (voice greeting will use text fallback)"
-        fi
+        # Check Program.cs
+        if (Test-Path "${{ env.PROJECT_PATH }}/Program.cs") {
+            Write-Host "✓ Program.cs found" -ForegroundColor Green
+        } else {
+            Write-Host "✗ Program.cs not found!" -ForegroundColor Red
+            exit 1
+        }
         
-        echo ""
-        echo "All critical files present!"
+        # Check greeting.wav
+        if (Test-Path "greeting.wav") {
+            Write-Host "✓ greeting.wav found" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ greeting.wav not found (text fallback will be used)" -ForegroundColor Yellow
+        }
     
-    # Step 6: Compile check (ensure no compilation errors)
-    - name: Compile check
-      run: dotnet build --configuration Release --no-restore
-    
-    # Step 7: Run any tests (if you have test files)
-    - name: Run tests
-      run: |
-        # Check if test project exists
-        if [ -f "CybersecurityAwarenessBot.Tests.csproj" ]; then
-          dotnet test --no-build --verbosity normal
-        else
-          echo "No test project found - skipping tests"
-        fi
-    
-    # Step 8: Verify the executable can be created
     - name: Publish application
-      run: dotnet publish --configuration Release --output ./publish
+      run: |
+        dotnet publish "${{ env.SOLUTION_NAME }}" `
+          --configuration ${{ env.CONFIGURATION }} `
+          --output ${{ env.OUTPUT_PATH }} `
+          --runtime win-x64 `
+          --self-contained false
     
-    # Step 9: Upload build artifacts (optional - for debugging)
-    - name: Upload build artifacts
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: CybersecurityBot-Build
-        path: |
-          ./publish/
-          !./publish/**/*.pdb  # Exclude debug symbols to save space
-      if: always()  # Upload even if build fails for debugging
-    
-    # Step 10: Check for common code issues
-    - name: Check for common issues
-      run: |
-        echo "Performing code quality checks..."
-        
-        # Check for null reference warnings in code
-        if grep -n "\?[^=]" Program.cs | grep -v "string?" | grep -v "Console.ReadLine()"; then
-          echo "⚠ Warning: Potential nullable reference issues found"
-        else
-          echo "✓ Nullable reference handling looks good"
-        fi
-        
-        # Check if SoundPlayer is used with proper package reference
-        if grep -q "SoundPlayer" Program.cs; then
-          if grep -q "System.Windows.Extensions" CybersecurityAwarenessBot.csproj; then
-            echo "✓ SoundPlayer package reference found"
-          else
-            echo "⚠ Warning: SoundPlayer used but System.Windows.Extensions package may be missing"
-          fi
-        fi
-
-  # Separate job for Windows-specific testing (optional)
-  windows-test:
-    runs-on: windows-latest
-    needs: build-and-test  # Only run if build passes on Ubuntu
-    if: always()  # Run regardless of build status for comprehensive testing
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup .NET 8.0
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    
-    - name: Restore and Build
-      run: |
-        dotnet restore
-        dotnet build --configuration Release
-    
-    - name: Verify WAV file compatibility on Windows
-      run: |
-        if (Test-Path "greeting.wav") {
-          Write-Host "✓ greeting.wav exists and is compatible with Windows"
-          $wavInfo = [System.IO.File]::ReadAllBytes("greeting.wav")
-          Write-Host "  File size: $($wavInfo.Length) bytes"
-        } else {
-          Write-Host "⚠ greeting.wav not found - voice feature will use text fallback"
-        }
-    
-    - name: Test application startup (no user input)
-      run: |
-        # This tests if the application starts without errors
-        # We pipe 'exit' to automatically close the app
-        echo "exit" | dotnet run --no-build --configuration Release
-        if ($LASTEXITCODE -eq 0) {
-          Write-Host "✓ Application starts successfully"
-        } else {
-          Write-Host "✗ Application had errors on startup"
-          exit 1
-        }
-
-  # Final status check
-  final-status:
-    runs-on: ubuntu-latest
-    needs: [build-and-test, windows-test]
-    if: always()
-    
-    steps:
-    - name: Check build status
-      run: |
-        echo "========================================="
-        echo "  CYBERSECURITY AWARENESS BOT - CI STATUS"
-        echo "========================================="
-        echo ""
-        
-        if [ "${{ needs.build-and-test.result }}" == "success" ]; then
-          echo "✓ Linux/Ubuntu build: SUCCESS"
-        else
-          echo "✗ Linux/Ubuntu build: FAILED"
-          exit 1
-        fi
-        
-        if [ "${{ needs.windows-test.result }}" == "success" ]; then
-          echo "✓ Windows build: SUCCESS"
-        else
-          echo "⚠ Windows build: ISSUES DETECTED (may be audio-related)"
-        fi
-        
-        echo ""
-        echo "✅ CI Pipeline completed successfully!"
-        echo "The Cybersecurity Awareness Bot is ready for deployment."
+        name: CybersecurityBot
+        path: ${{ env.OUTPUT_PATH }}
