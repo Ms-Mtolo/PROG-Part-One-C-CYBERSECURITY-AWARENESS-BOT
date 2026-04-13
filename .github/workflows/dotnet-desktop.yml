@@ -1,4 +1,4 @@
-name: Cybersecurity Bot CI
+name: prog part one
 
 on:
   push:
