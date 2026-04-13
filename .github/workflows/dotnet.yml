@@ -1,0 +1,79 @@
+name: Cybersecurity Bot CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Debug - Show current directory contents
+      run: |
+        Write-Host "Current directory: $(Get-Location)"
+        Write-Host "Files found:"
+        Get-ChildItem -Name
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Build project
+      run: |
+        # Try different methods to build
+        
+        # Method 1: Look for .csproj first
+        $csproj = Get-ChildItem -Filter "*.csproj" | Select-Object -First 1
+        if ($csproj) {
+            Write-Host "Building .csproj: $($csproj.Name)"
+            dotnet build $csproj.FullName --configuration Release
+            $buildSuccess = $true
+        }
+        
+        # Method 2: If no .csproj, try .slnx
+        if (-not $buildSuccess) {
+            $slnx = Get-ChildItem -Filter "*.slnx" | Select-Object -First 1
+            if ($slnx) {
+                Write-Host "Building .slnx: $($slnx.Name)"
+                dotnet build $slnx.FullName --configuration Release
+                $buildSuccess = $true
+            }
+        }
+        
+        # Method 3: If no solution file, try building current directory
+        if (-not $buildSuccess) {
+            Write-Host "No project file found, trying to build current directory"
+            dotnet build --configuration Release
+        }
+    
+    - name: Publish
+      run: |
+        $csproj = Get-ChildItem -Filter "*.csproj" | Select-Object -First 1
+        if ($csproj) {
+            dotnet publish $csproj.FullName --configuration Release --output ./publish
+        } else {
+            dotnet publish --configuration Release --output ./publish
+        }
+    
+    - name: Verify build output
+      run: |
+        if (Test-Path "./publish/*.exe") {
+            Write-Host "✓ Build successful! Executable created." -ForegroundColor Green
+            Get-ChildItem "./publish/*.exe" | ForEach-Object {
+                Write-Host "  - $($_.Name) ($([math]::Round($_.Length/1KB,2)) KB)"
+            }
+        } else {
+            Write-Host "⚠ No executable found in publish folder" -ForegroundColor Yellow
+        }
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: CybersecurityBot
+        path: ./publish/
